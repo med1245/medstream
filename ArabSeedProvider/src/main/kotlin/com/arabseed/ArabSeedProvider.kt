@@ -4,10 +4,11 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.nodes.Element
+import android.util.Log
 
 class ArabSeed : MainAPI() {
     override var lang = "ar"
-    override var mainUrl = "https://e.arabseed.ink"
+    override var mainUrl = "https://arabseed.show"
     override var name = "ArabSeed"
     override val usesWebView = false
     override val hasMainPage = true
@@ -16,29 +17,29 @@ class ArabSeed : MainAPI() {
     private fun String.getIntFromText(): Int? {
         return Regex("""\d+""").find(this)?.groupValues?.firstOrNull()?.toIntOrNull()
     }
-    
+
 
     private fun Element.toSearchResponse(): SearchResponse? {
         val title = select("h4").text()
         val posterUrl = select("img.imgOptimzer").attr("data-image").ifEmpty { select("div.Poster img").attr("data-src") }
         val tvType = if (select("span.category").text().contains("مسلسلات")) TvType.TvSeries else TvType.Movie
         return MovieSearchResponse(
-            title,
-            select("a").attr("href"),
-            this@ArabSeed.name,
-            tvType,
-            posterUrl,
-            )
+                title,
+                select("a").attr("href"),
+                this@ArabSeed.name,
+                tvType,
+                posterUrl,
+        )
     }
 
     override val mainPage = mainPageOf(
-        "$mainUrl/movies/?offset=" to "Movies",
-        "$mainUrl/series/?offset=" to "Series",
+            "$mainUrl/movies/?offset=" to "Movies",
+            "$mainUrl/series/?offset=" to "Series",
     )
 
     override suspend fun getMainPage(
-        page: Int,
-        request: MainPageRequest
+            page: Int,
+            request: MainPageRequest
     ): HomePageResponse {
         val document = app.get(request.data + page, timeout = 120).document
         val home = document.select("ul.Blocks-UL > div").mapNotNull {
@@ -50,13 +51,13 @@ class ArabSeed : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse> {
         val list = arrayListOf<SearchResponse>()
         arrayListOf(
-            mainUrl to "series",
-            mainUrl to "movies"
+                mainUrl to "series",
+                mainUrl to "movies"
         ).apmap { (url, type) ->
             val doc = app.post(
-                "$url/wp-content/themes/Elshaikh2021/Ajaxat/SearchingTwo.php",
-                data = mapOf("search" to query, "type" to type),
-                referer = mainUrl
+                    "$url/wp-content/themes/Elshaikh2021/Ajaxat/SearchingTwo.php",
+                    data = mapOf("search" to query, "type" to type),
+                    referer = mainUrl
             ).document
             doc.select("ul.Blocks-UL > div").mapNotNull {
                 it.toSearchResponse()?.let { it1 -> list.add(it1) }
@@ -66,8 +67,8 @@ class ArabSeed : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        val doc = app.get(url, timeout = 120).document
-        val title = doc.select("h1.Title").text().ifEmpty { doc.select("div.Title").text() }
+        val doc = app.get(url, timeout = 5000).document
+        val title = doc.title()
         val isMovie = title.contains("فيلم")
 
         val posterUrl = doc.select("div.Poster > img").let{ it.attr("data-src").ifEmpty { it.attr("src") } }
@@ -90,10 +91,10 @@ class ArabSeed : MainAPI() {
 
         return if (isMovie) {
             newMovieLoadResponse(
-                title,
-                url,
-                TvType.Movie,
-                url
+                    title,
+                    url,
+                    TvType.Movie,
+                    url
             ) {
                 this.posterUrl = posterUrl
                 this.recommendations = recommendations
@@ -109,28 +110,28 @@ class ArabSeed : MainAPI() {
             if(seasonList.isNotEmpty()) {
                 seasonList.apmap { season ->
                     app.post(
-                        "$mainUrl/wp-content/themes/Elshaikh2021/Ajaxat/Single/Episodes.php",
-                        data = mapOf("season" to season.attr("data-season"), "post_id" to season.attr("data-id"))
+                            "$mainUrl/wp-content/themes/Elshaikh2021/Ajaxat/Single/Episodes.php",
+                            data = mapOf("season" to season.attr("data-season"), "post_id" to season.attr("data-id"))
                     ).document.select("a").apmap {
                         episodes.add(Episode(
-                            it.attr("href"),
-                            it.text(),
-                            season.attr("data-season")[0].toString().toIntOrNull(),
-                            it.text().getIntFromText()
+                                it.attr("href"),
+                                it.text(),
+                                season.attr("data-season")[0].toString().toIntOrNull(),
+                                it.text().getIntFromText()
                         ))
                     }
                 }
             } else {
                 doc.select("div.ContainerEpisodesList > a").apmap {
                     episodes.add(Episode(
-                        it.attr("href"),
-                        it.text(),
-                        0,
-                        it.text().getIntFromText()
+                            it.attr("href"),
+                            it.text(),
+                            0,
+                            it.text().getIntFromText()
                     ))
                 }
             }
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes.distinct().sortedBy { it.episode }) {
+            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes.distinct().sortedBy { it.data }) {
                 this.posterUrl = posterUrl
                 this.tags = tags
                 this.plot = synopsis
@@ -143,10 +144,10 @@ class ArabSeed : MainAPI() {
     }
 
     override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
+            data: String,
+            isCasting: Boolean,
+            subtitleCallback: (SubtitleFile) -> Unit,
+            callback: (ExtractorLink) -> Unit
     ): Boolean {
         val doc = app.get(data).document
         val watchUrl = doc.select("a.watchBTn").attr("href")
@@ -156,8 +157,11 @@ class ArabSeed : MainAPI() {
             if(element.`is`("h3")) {
                 indexOperators.add(index)
                 element
-            } else element
+            } else
+                Log.d("Elements","${element}")
+                element
         }
+        Log.d("list","${list}")
         var watchLinks: List<Pair<Int, List<Element>>>;
         if(indexOperators.isNotEmpty()) {
             watchLinks = indexOperators.mapIndexed { index, it ->
@@ -168,22 +172,26 @@ class ArabSeed : MainAPI() {
         } else {
             watchLinks = arrayListOf(0 to list)
         }
-        watchLinks.apmap { (quality, links) ->
+        Log.d("watchLinks","${watchLinks}")
+        watchLinks.apmap { (Quality ,links) ->
             links.apmap {
                 val iframeUrl = it.attr("data-link")
+                Log.d("iframeUrl","${iframeUrl}")
                 println(iframeUrl)
-                if(it.text().contains("عرب سيد")) {
-                    val sourceElement = app.get(iframeUrl).document.select("source")
+                if(it.text().contains("سيد")) {
+                    val sourceElement = app.get(iframeUrl, headers = mapOf("Referer" to mainUrl)).document.select("source")
+                    Log.d("sourceframe","${sourceElement.attr("src")}")
+
                     callback.invoke(
-                        ExtractorLink(
-                            this.name,
-                            "ArabSeed",
-                            sourceElement.attr("src"),
-                            data,
-                            if(quality != 0) quality else it.text().replace(".*- ".toRegex(), "").replace("\\D".toRegex(),"").toInt(),
-                            !sourceElement.attr("type").contains("mp4")
-                        )
+                            ExtractorLink(
+                                    this.name,
+                                    "Arab Seed",
+                                    sourceElement.attr("src"),
+                                    data,
+                                    quality = 0
+                            )
                     )
+                    loadExtractor(iframeUrl, data, subtitleCallback, callback)
                 } else loadExtractor(iframeUrl, data, subtitleCallback, callback)
             }
         }
