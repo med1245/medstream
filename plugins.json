@@ -6,7 +6,7 @@
     "status": 0,
     "language": "ar",
     "authors": [
-        "med1245"
+        "medstream"
     ],
     "tvTypes": [
         "TvSeries",
@@ -16,7 +16,7 @@
     ],
     "version": 16,
     "internalName": "FaselHDProvider",
-    "url": "https://github.com/med1245/arabicomm/blob/main/build/FaselHDProvider.cs3",
+    "url": "https://github.com/aymanbest/Arabico/raw/main/build/FaselHDProvider.cs3",
     "name": "FaselHDProvider"
 },
 {
