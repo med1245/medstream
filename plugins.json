@@ -298,7 +298,7 @@
         "internalName": "Shahid4uProvider",
         "url": "https://codeberg.org/Mark_Eshia/arab/raw/branch/builds/Shahid4uProvider.cs3",
         "name": "Shahid4uProvider"
-    }
+    },
     {
         "iconUrl": "https://www.google.com/s2/favicons?domain=ww.tuktukcinma.com&sz=%size%",
         "apiVersion": 1,
@@ -317,5 +317,5 @@
         "internalName": "TuktukProvider",
         "url": "https://github.com/med1245/medstream/blob/builds/Toktok.cs3",
         "name": "TuktukProvider"
-    },
+    }
 ]
