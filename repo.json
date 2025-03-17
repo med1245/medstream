@@ -1,8 +1,8 @@
 {
-    "name": "Arabic providers repository",
-    "description": "Cloudstream Arabic Plugin Repository",
+    "name": "Arabico",
+    "description": "Updating the Cloudstream Arabic Provider. Feel free to join the Cloudstream Discord server for the latest information.",
     "manifestVersion": 1,
     "pluginLists": [
-      "https://github.com/med1245/medstream/blob/builds/plugins.json"
+      "https://github.com/aymanbest/Arabico/raw/main/plugins.json"
     ]
   }
