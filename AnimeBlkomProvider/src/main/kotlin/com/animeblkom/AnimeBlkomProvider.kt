@@ -7,7 +7,6 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.nodes.Element
-import android.util.Log
 
 class AnimeBlkom : MainAPI() {
     override var mainUrl = "https://animeblkom.net"
@@ -54,7 +53,7 @@ class AnimeBlkom : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         val q = query.replace(" ","+")
-        return app.get("$mainUrl/search?query=$q").document.select("div.contents.text-center .content").map {
+        return app.get("$mainUrl/search?query=$q").document.select("div.content.ratable").map {
             it.toSearchResponse()
         }
     }
@@ -85,12 +84,10 @@ class AnimeBlkom : MainAPI() {
                 "Watch",
             ))
         } else {
-            Log.d("episodeElements","${episodeElements}")
             episodeElements.map {
                 val a = it.select("a")
-                Log.d("aUrls","${a}")
                 episodes.add(Episode(
-                    a.attr("href"),
+                    mainUrl + a.attr("href"),
                     a.text().replace(":"," "),
                     episode = a.select("span").not(".pull-left").last()?.text()?.toIntOrNull()
                 ))
@@ -116,10 +113,8 @@ class AnimeBlkom : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val doc = app.get(data).document
-        Log.d("selectUrls","${doc.select("div.item a[data-src]")}")
         doc.select("div.item a[data-src]").map {
             it.attr("data-src").let { url ->
-                Log.d("normalUrls","${url}")
                 if(url.startsWith("https://animetitans.net/")) {
                     val iframe = app.get(url).document
                     callback.invoke(
@@ -133,7 +128,6 @@ class AnimeBlkom : MainAPI() {
                         )
                     )
                 } else if(it.text() == "Blkom") {
-                    Log.d("blUrls","${url}")
                     val iframe = app.get(url).document
                     iframe.select("source").forEach { source ->
                         callback.invoke(
@@ -148,21 +142,20 @@ class AnimeBlkom : MainAPI() {
                     }
                 } else {
                     var sourceUrl = url
-                    Log.d("google","${url}")
                     if(it.text().contains("Google")) sourceUrl = "http://gdriveplayer.to/embed2.php?link=$url"
                     loadExtractor(sourceUrl, mainUrl, subtitleCallback, callback)
                 }
             }
         }
         doc.select(".panel .panel-body a").apmap {
-            Log.d("it text","${it.text()}")
+            println(it.text())
             callback.invoke(
                 ExtractorLink(
                     this.name,
                     it.attr("title") + " " + it.select("small").text() + " Download Source",
                     it.attr("href"),
                     this.mainUrl,
-                    it.text().replace("<.*?>| MiB".toRegex(),"").toDouble().toInt(),
+                    it.text().replace("p.*| ".toRegex(),"").toInt(),
                 )
             )
         }
